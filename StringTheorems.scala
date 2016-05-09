@@ -53,7 +53,7 @@ There exist a constant k such that q = p k and A = k B*/
     }
   } ensuring {
     k => C == k._1 + k._2 && B == k._2 + k._1 // Maybe something on A
-  }
+  } 
   
   def power(A: String, n: BigInt): String = {
     require(n >= 0)
@@ -65,23 +65,77 @@ There exist a constant k such that q = p k and A = k B*/
   def LemmaAssociative(A: String, B: String, C: String): Boolean = {
     (A + B) + C == A + (B + C)
   } holds
+  
+  def LemmaPower2OrMore(A: String, n: BigInt) = {
+    require(n > 1)
+    power(A, n) == A + power(A, n-1)
+  } holds
+
+  def LemmaCommutative$0(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 2)
+    B + power(A, n) == (B + A) + power(A, n-1)
+  } holds
+  
+  def LemmaCommutative$1(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 2 && A + B == B + A)
+    (B + A) + power(A, n-1) == (A + B) + power(A, n-1)
+  } holds
+  
+  def LemmaCommutative$2(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 2 && A + B == B + A)
+    (A + B) + power(A, n-1) == A + (B + power(A, n-1))
+  } holds
+  
+  def LemmaCommutative$3(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 2 && A + B == B + A)
+    A + (power(A, n-1) + B) == (A + power(A, n-1)) + B
+  } holds
+  
+  def LemmaCommutative$4(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 2 && A + B == B + A)
+    (A + power(A, n-1)) + B == power(A, n) + B
+  } holds
+  
+  @library
+  def LEmamjk(A: String, B: String, n: BigInt): Boolean = {
+     (B + power(A, n) == power(A, n) + B)
+  } holds
+  
+  def emptyStringCommutes(A: String): Boolean = {
+    A + "" == "" + A
+  } holds
 
   def LemmaCommutative(A: String, B: String, n: BigInt): Boolean = {
-    require(A + B == B + A && n >= 0 && n <= 2)
+    require(A + B == B + A && n >= 0)
     B + power(A, n) == power(A, n) + B because {
-      if(n == 0) trivial
-      else if(n == 1) trivial
+      if(n == 0) power(A, 0) == "" && emptyStringCommutes(B)
+      else if(n == 1) power(A, 1) == A && B + A == A + B
       else {
-        B + power(A, n)         ==| trivial |
-        B + (A + power(A, n-1)) ==| LemmaAssociative(B, A, power(A, n-1)) |
-        (B + A) + power(A, n-1) ==| trivial |
-        (A + B) + power(A, n-1) ==| LemmaAssociative(A, B, power(A, n-1)) |
+        B + power(A, n)         ==| LemmaCommutative$0(A,B,n) |
+        (B + A) + power(A, n-1) ==| LemmaCommutative$1(A,B,n) |
+        (A + B) + power(A, n-1) ==| LemmaCommutative$2(A,B,n) |
         A + (B + power(A, n-1)) ==| LemmaCommutative(A, B, n-1) |
-        A + (power(A, n-1) + B) ==| LemmaAssociative(A, power(A, n-1), B) |
-        (A + power(A, n-1)) + B ==| trivial |
+        A + (power(A, n-1) + B) ==| LemmaCommutative$3(A,B,n) |
+        (A + power(A, n-1)) + B ==| LemmaCommutative$4(A,B,n) |
         power(A, n) + B
       } qed
     }
+  } holds
+  
+  def LemmaCommutativeWOProofDSL(A: String, B: String, n: BigInt): Boolean = {
+    require(A + B == B + A && n >= 0)
+    (
+      if(n == 0) power(A, 0) == "" && emptyStringCommutes(B)
+      else if(n == 1) power(A, 1) == A && B + A == A + B
+      else {
+         LemmaCommutative$0(A,B,n) &&
+         LemmaCommutative$1(A,B,n) &&
+         LemmaCommutative$2(A,B,n) && 
+         LemmaCommutative(A, B, n-1) &&
+         LemmaCommutative$3(A,B,n) &&
+         LemmaCommutative$4(A,B,n)
+      }
+    ) && B + power(A, n) == power(A, n) + B 
   } holds
   
   /*@induct
