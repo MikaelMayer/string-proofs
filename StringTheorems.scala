@@ -66,14 +66,32 @@ object StringTest {
   
   // Left simplification
   def LemmaLeftSimplification(A: String, B: String, C: String): Boolean = {
-    require(C + A == C + B)
-    A == B
+    require(A + B == A + C)
+    B == C
   } holds
   
   // Right simplification
   def LemmaRightSimplification(A: String, B: String, C: String): Boolean = {
     require(A + C == B + C)
     A == B
+  } holds
+  
+  
+  // Left size simplification
+  def LemmaLeftSizeSimplification(A: String, B: String, C: String, D: String): Boolean = {
+    require(A.bigLength == C.bigLength && A+B==C+D)
+    A == C && B == D
+  } holds
+  
+  // Right size simplification A+B == C+D && |B| == |D| ==> B == D && A == C
+  def LemmaRightSizeSimplification(A: String, B: String, C: String, D: String): Boolean = {
+    require(B.bigLength == D.bigLength && A+B==C+D)
+    A == C && B == D
+  } holds
+  
+  /** |A+B| == |A|+|B|*/
+  def LemmaLength(A: String, B: String): Boolean = {
+    (A + B).bigLength == A.bigLength + B.bigLength
   } holds
   
   /** Power can also be defined on the right */
@@ -92,7 +110,7 @@ object StringTest {
 | p |`< | q |  && p A = q B
 <=>
 There exist a constant k such that q = p k and A = k B*/
-  def Lemma005PrefixIntroduce(p: String, q: String, A: String, B: String) = {
+  def Lemma005PrefixIntroduce(p: String, A: String, q: String, B: String) = {
     require(p.bigLength < q.bigLength && p + A == q + B)
     val (l, k) = split(q, p.bigLength)
     k
@@ -102,11 +120,17 @@ There exist a constant k such that q = p k and A = k B*/
 | p |`< | q |  && A p = B q
 <=>
 There exist a constant k such that q = k p and A = B k */
-  def Lemma006SuffixIntroduce(p: String, q: String, A: String, B: String) = {
+  def Lemma006SuffixIntroduce(A: String, p: String, B: String, q: String) = {
     require(p.bigLength < q.bigLength && A + p == B + q)
     val (k, l) = splitFromEnd(q, p.bigLength)
     k
   } ensuring { (k: String) => q == k + p && A == B + k }
+
+/** If A + B == C + D && |B| < |D| ==> |A| > |C| */
+  def LemmaRightGreaterSmaller(A: String, B: String, C: String, D: String) = {
+    require(A + B == C + D && B.bigLength < D.bigLength)
+    A.bigLength > C.bigLength 
+  } holds
 
 /*
 If A + B == C + A and |A| <= |C|, then there exists k1 and k2 such that
@@ -159,11 +183,12 @@ A = k1
     (C + ap) + B == C + A &&
     LemmaAssociativity(C, ap, B) &&
     C + (ap + B) == C + A &&
-    LemmaLeftSimplification(ap + B, A, C) &&
+    LemmaLeftSimplification(C, ap + B, A) &&
     ap + B == A &&
     C + ap == ap + B
   } holds
 
+  /** A + B == C + A ==> C == k1k2 && B == k2k1 */
   def LemmaCommutation2(A: String, B: String, C: String): (String, String, String) = {
     require(A + B == C + A)
     if(C.bigLength >= A.bigLength) {
@@ -178,6 +203,26 @@ A = k1
     }
   } ensuring {
     k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._3
+  }
+  
+  /** A + B == C + A && |C| < |A| ==> C == k1k2 && B == k2k1 && A==k1k2k3 && A == k3k2k1 */
+  def LemmaCommutation3(A: String, B: String, C: String): (String, String, String) = {
+    require(A + B == C + A && C.bigLength < A.bigLength)
+    val (c, ap) = split(A, C.bigLength)
+    if (LemmaPreCondCommutation(A, B, C) && c == C && C+ap == A && ap+B == A) {
+      val k = LemmaCommutation2(ap, B, C)
+      if(k._3 == ap &&
+         C == k._1 + k._2 &&
+         B == k._2 + k._1 &&
+         A == (k._1 + k._2)+k._3 &&
+         k._3+(k._2+k._1) == A && LemmaAssociativity(k._3, k._2, k._1) &&
+         A == (k._3+k._2)+k._1
+         ) {
+        (k._1, k._2, k._3)
+      } else error[(String, String, String)]("should not happen")
+    } else error[(String, String, String)]("should not happen")
+  } ensuring {
+    k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._1 + k._2 + k._3 && A == k._3 + k._2 + k._1
   }
   
   // Other lemmas
@@ -265,7 +310,8 @@ A = k1
        LemmaAssociativity(A, power(A, n-1), (B + power(B, n-1))) &&
        A + (power(A, n-1) + (B + power(B, n-1))) == (A + power(A, n-1)) + (B + power(B, n-1)) &&
       (A + power(A, n-1)) + (B + power(B, n-1)) == power(A, n) + power(B, n)
-    } && power(A + B, n) == power(A, n) + power(B, n)
+    } &&
+    power(A + B, n) == power(A, n) + power(B, n)
   } holds
   
   // A + n(B+A) == n(A+B) + A
@@ -306,6 +352,26 @@ if A B = C A, then there exists k1 and k2 such that C = k1 k2 and B = k2 k1  and
 if A B = B A, then (A B)^n = A^n B^n
 6) Power Equivalence
  (A B)^n A = A (B A)^n*/
+ 
+  def minus1(n: Nat) = {
+    require(n match { case Succ(np) => true case Zero => false })
+    n match { case Succ(np) => np }
+  } ensuring {
+    res => n == Succ(res)
+  }
+  
+  /*@library
+  def dummyTheorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
+    require{
+      val f = (n: Nat) => fc(n, A, B, C)
+      val g = (n: Nat) => fc(n, D, E, F)
+      f(Zero) == g(Zero) &&
+      f(Succ(Zero)) == g(Succ(Zero))  &&
+      f(Succ(Succ(Zero))) == g(Succ(Succ(Zero)))}
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
+    f(n) == g(n)
+  } holds*/
   
   def theorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
     require{
@@ -314,8 +380,103 @@ if A B = B A, then (A B)^n = A^n B^n
       f(Zero) == g(Zero) &&
       f(Succ(Zero)) == g(Succ(Zero))  &&
       f(Succ(Succ(Zero))) == g(Succ(Succ(Zero)))}
-    fc(n, A, B, C) == fc(n, D, E, F) because {
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
+    f(Zero) == C &&
+    g(Zero) == F &&
+    C == F &&
+    f(Succ(Zero)) == A+C+B &&
+    g(Succ(Zero)) == D+F+E &&
+    A+C+B == D+C+E &&
+    f(Succ(Succ(Zero))) == A+(A+C+B)+B &&
+    g(Succ(Succ(Zero))) == D+(D+F+E)+E &&
+    A+(A+C+B)+B == D+(D+C+E)+E &&
+    (if(E.bigLength == B.bigLength) {
       true
+      /*                                          (A+C)+B == (D+C)+E &&
+      LemmaRightSizeSimplification(A+C,B,D+C,E)  &&     B == E &&
+      LemmaRightSimplification(A+C,D+C,B) &&          A+C == D+C  &&
+      LemmaRightSimplification(A,D,C) &&                A == D &&
+                                                     f(n) == g(n)*/
+    } else (if(n == Zero) f(n) == g(n) 
+    else if(n == Succ(Zero)) f(n) == g(n)
+    else {
+      if(E.bigLength < B.bigLength) {
+        val m = Lemma006SuffixIntroduce(D+C, E, A+C, B)
+        B == m + E && D+C == (A+C) + m &&    // ACB = DCE <=> ACm = DC
+        LemmaRightGreaterSmaller(D+C, E, A+C, B) &&
+        (D+C).bigLength > (A+C).bigLength &&
+        LemmaLength(D, C) && LemmaLength(A, C) &&
+        D.bigLength + C.bigLength > A.bigLength + C.bigLength &&
+        D.bigLength > A.bigLength &&
+        LemmaAssociativity(A, C, m) &&
+        D+C == A+(C+m) && {
+          val k = Lemma005PrefixIntroduce(A, C+m, D, C)
+          D == A+k &&                    // ACm = DC <=> Cm = kC
+          (A+k)+C == (A+C)+m &&
+          LemmaAssociativity(A, k, C) && LemmaAssociativity(A, C, m) &&
+          A+(k+C) == A+(C+m) &&
+          LemmaLeftSimplification(A, k+C, C+m) &&
+          C+m == k+C && (if(C.bigLength >= m.bigLength) {
+            true //TODO
+          } else {
+            true //TODO
+            /*val (r, s, t) = LemmaCommutation3(C, m, k)
+            k == r + s &&
+            m == s + r*/ /*&&
+           // C == r + s + t && C == t + s + r &&
+            B == m + E &&
+            (A+(A+C+(m + E)))+(m + E) == ((A+k)+((A+k)+C+E))+E &&
+            LemmaAssociativity(A+(A+C+(m + E)), m, E) &&
+            ((A+(A+C+(m + E)))+m) + E == ((A+k)+((A+k)+C+E))+E &&
+            LemmaRightSimplification((A+(A+C+(m + E)))+m, (A+k)+(A+k+C+E), E) &&
+            (A+(A+C+(m + E)))+m == (A+k)+(A+k+C+E) &&
+            LemmaAssociativity(A, A+C+(m + E), m) && LemmaAssociativity(A, k, A+k+C+E) &&
+            A + ((A+C+(m + E))+m) == A+(k+(A+k+C+E)) &&
+            LemmaLeftSimplification(A, ((A+C+(m + E))+m), (k+(A+k+C+E))) &&
+            A+C+(m+E)+m == k+(A+k+C+E) &&
+            A+C+((s + r)+E)+(s + r) == (r + s)+(A+(r + s)+C+E)// &&
+            // C = RSRSRSR... for example so 
+            //ACsrEsr == rsArsCE
+            //With C = rsG == Grs
+            //ArsGsrEsr == rsArsGrsE
+            //Ars == rsA && Esr == rsE
+            */
+          })
+          
+          /* &&
+          m.bigLength == k.bigLength*/
+        }
+        
+        /* &&
+        (A+C).bigLength > (D+C).bigLength &&
+        (A+C)+(k+E) == (D+C)+E &&
+        LemmaAssociativity(A=C,k,E) &&
+        ((A+C)+k)+E == (D+C)+E &&
+        LemmaRightSimplification((A+C)+k, D+C, E) &&
+        (A+C)+k == D+C &&*/
+        
+        /* &&
+        A.bigLength < D.bigLength*/
+      } else {
+        E.bigLength > B.bigLength
+      }
+      /*val np = minus1(n) // n == Succ(np)
+      dummyTheorem(np, A, B, C, D, E, F) &&
+      f(np) == g(np) &&
+      f(n) == A+f(np)+B &&
+      g(n) == D+g(np)+E &&
+      A+f(np)+B == D+g(np)+E &&
+      n == Succ(np)*/
+    }))
+  }.holds
+    /* &&
+    g(Succ(Succ(Zero))) == D+g(Succ(Zero))+E *//* &&
+    A+A+C+B+B == D+D+F+E+E*/
+    /**
+    A+A+C+B+B == D+D+F+E+E*/
+    //fc(n, A, B, C) == fc(n, D, E, F) because {
+    //  true
       
       /*f(Zero) == g(Zero) <=> C = F
       1. f(Succ(Zero)) == g(Succ(Zero)) <=> ACB = DCE
@@ -372,6 +533,6 @@ if A B = B A, then (A B)^n = A^n B^n
              YSR != RSY
              
              Y != RSR (Y = f(n'')) donc n'' != Zero.
-    */}
-  }.holds
+    *///}
+
 }
