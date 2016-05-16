@@ -59,6 +59,11 @@ object StringTest {
     (A + B) + C == A + (B + C)
   } holds
   
+  // Useful bigger associativity lemma
+  def LemmaAssociativity4(A: String, B: String, C: String, D: String): Boolean = {
+    A + ((B + C) + D) == ((A + B) + C) + D
+  } holds
+  
   // Left simplification
   def LemmaLeftSimplification(A: String, B: String, C: String): Boolean = {
     require(C + A == C + B)
@@ -69,6 +74,18 @@ object StringTest {
   def LemmaRightSimplification(A: String, B: String, C: String): Boolean = {
     require(A + C == B + C)
     A == B
+  } holds
+  
+  /** Power can also be defined on the right */
+  def LemmaPowerRight(A: String, n: BigInt): Boolean = {
+    require(n > 0)
+    (if(n == 1) power(A, n - 1) == "" && "" + A == A
+    else {
+      LemmaPowerKeepsCommutativity(A, A, n-1) &&
+      power(A, n - 1) + A == A + power(A, n - 1) &&
+      A + power(A, n - 1) == power(A, n)
+    }) &&
+    power(A, n - 1) + A == power(A, n)
   } holds
   
   /*3) prefix-introduce
@@ -251,6 +268,32 @@ A = k1
     } && power(A + B, n) == power(A, n) + power(B, n)
   } holds
   
+  // A + n(B+A) == n(A+B) + A
+  def LemmaPowerEquivalence(A: String, B: String, n: BigInt): Boolean = {
+    require(n >= 0)
+    if(n == 0)      power(B + A, n) == "" && emptyStringCommutes(A)  && A + power(B + A, n) == power(A + B, n) + A
+    else if(n == 1) power(B + A, 1) == B + A && LemmaAssociativity(A, B, A) && A + power(B + A, n) == power(A + B, n) + A
+    else {
+      A + power(B + A, n) == A + ((B + A) + power(B + A, n - 1)) &&
+      LemmaAssociativity(B, A, power(B + A, n - 1)) &&
+      A + ((B + A) + power(B + A, n - 1)) == A + (B + (A + power(B + A, n - 1))) &&
+      LemmaPowerEquivalence(A, B, n-1) &&
+      A + (B + (A + power(B + A, n - 1))) == A + (B + (power(A + B, n - 1) + A)) &&
+      LemmaAssociativity(B, power(A + B, n - 1), A) &&
+      A + (B + (power(A + B, n - 1) + A)) == A + ((B + power(A + B, n - 1)) + A) &&
+      LemmaPowerEquivalence(B, A, n-1) &&
+      A + ((B + power(A + B, n - 1)) + A) == A + ((power(B + A, n - 1) + B) + A) &&
+      LemmaAssociativity4(A, power(B + A, n - 1), B, A) &&
+      A + ((power(B + A, n - 1) + B) + A) == ((A + power(B + A, n - 1)) + B) + A &&
+      LemmaPowerEquivalence(A, B, n-1) &&
+      ((A + power(B + A, n - 1)) + B) + A == ((power(A + B, n - 1) + A) + B) + A &&
+      LemmaAssociativity(power(A + B, n - 1), A, B) &&
+      ((power(A + B, n - 1) + A) + B) + A ==  (power(A + B, n - 1) + (A + B)) + A &&
+      LemmaPowerRight(A + B, n) &&
+      (power(A + B, n - 1) + (A + B)) + A ==  power(A + B, n) + A
+    } &&
+    A + power(B + A, n) == power(A + B, n) + A
+  } holds
 /*
 
 
