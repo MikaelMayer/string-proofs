@@ -162,7 +162,7 @@ A = k1
   } ensuring {
     k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._3
   }
-
+  
   // Other lemmas
   def LemmaCommutative$0(A: String, B: String, n: BigInt): Boolean = {
     require(n >= 2)
@@ -210,7 +210,8 @@ A = k1
     }
   } holds*/
   
-  def LemmaCommutative(A: String, B: String, n: BigInt): Boolean = {
+  // B + nA == nA + B
+  def LemmaPowerKeepsCommutativity(A: String, B: String, n: BigInt): Boolean = {
     require(A + B == B + A && n >= 0)
     (
       if(n == 0) power(A, 0) == "" && emptyStringCommutes(B)
@@ -219,11 +220,35 @@ A = k1
          LemmaCommutative$0(A,B,n) &&
          LemmaCommutative$1(A,B,n) &&
          LemmaCommutative$2(A,B,n) && 
-         LemmaCommutative(A, B, n-1) &&
+         LemmaPowerKeepsCommutativity(A, B, n-1) &&
          LemmaCommutative$3(A,B,n) &&
          LemmaCommutative$4(A,B,n)
       }
     ) && B + power(A, n) == power(A, n) + B 
+  } holds
+  
+  // n(A+B) = nA + nB
+  def LemmaDblPowerKeepsCommutativity(A: String, B: String, n: BigInt): Boolean = {
+    require(A + B == B + A && n >= 0)
+    if(n == 0) power(A, 0) == "" && power(B, 0) == ""    && power(A + B, n) == power(A, n) + power(B, n)
+    else if(n == 1) power(A, 1) == A && power(B, 1) == B && power(A + B, n) == power(A, n) + power(B, n)
+    else {
+      power(A + B, n) == (A + B) + power(A + B, n - 1) &&
+      LemmaDblPowerKeepsCommutativity(A, B, n-1) &&
+       (A + B) + power(A + B, n - 1) == (A + B) + (power(A, n-1) + power(B, n-1)) &&
+       LemmaAssociativity(A, B, power(A, n-1) + power(B, n-1)) &&
+       (A + B) + (power(A, n-1) + power(B, n-1)) == A + (B + (power(A, n-1) + power(B, n-1))) &&
+       LemmaAssociativity(B, power(A, n-1), power(B, n-1)) &&
+       A + (B + (power(A, n-1) + power(B, n-1))) == A + ((B + power(A, n-1)) + power(B, n-1)) &&
+       LemmaPowerKeepsCommutativity(A, B, n - 1) &&
+       //B + power(A, n-1) == power(A, n-1) + B && 
+       A + ((B + power(A, n-1)) + power(B, n-1)) == A + ((power(A, n-1) + B) + power(B, n-1)) &&
+       LemmaAssociativity(power(A, n-1), B, power(B, n-1)) &&
+       A + ((power(A, n-1) + B) + power(B, n-1)) == A + (power(A, n-1) + (B + power(B, n-1))) &&
+       LemmaAssociativity(A, power(A, n-1), (B + power(B, n-1))) &&
+       A + (power(A, n-1) + (B + power(B, n-1))) == (A + power(A, n-1)) + (B + power(B, n-1)) &&
+      (A + power(A, n-1)) + (B + power(B, n-1)) == power(A, n) + power(B, n)
+    } && power(A + B, n) == power(A, n) + power(B, n)
   } holds
   
 /*
