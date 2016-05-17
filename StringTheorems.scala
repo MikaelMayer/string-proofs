@@ -418,37 +418,36 @@ if A B = B A, then (A B)^n = A^n B^n
           LemmaAssociativity(A, k, C) && LemmaAssociativity(A, C, m) &&
           A+(k+C) == A+(C+m) &&
           LemmaLeftSimplification(A, k+C, C+m) &&
-          C+m == k+C && (if(C.bigLength >= m.bigLength) {
-            true //TODO
-          } else {
+          C+m == k+C && (if(C.bigLength > k.bigLength) {
             val (r, s, t) = LemmaCommutation3(C, m, k)
             k == r + s &&
-            m == s + r //TODO
-            /*val (r, s, t) = LemmaCommutation3(C, m, k)
-            k == r + s &&
-            m == s + r*/ /*&&
-           // C == r + s + t && C == t + s + r &&
+            m == s + r &&
+            C == r + s + t && C == t + s + r &&
+            D == A + k &&
             B == m + E &&
-            (A+(A+C+(m + E)))+(m + E) == ((A+k)+((A+k)+C+E))+E &&
+            (A+(A+C+(m + E)))+(m + E) == (D+(D+C+E))+E &&
             LemmaAssociativity(A+(A+C+(m + E)), m, E) &&
-            ((A+(A+C+(m + E)))+m) + E == ((A+k)+((A+k)+C+E))+E &&
-            LemmaRightSimplification((A+(A+C+(m + E)))+m, (A+k)+(A+k+C+E), E) &&
+            ((A+(A+C+(m + E)))+m) + E == (D+(D+C+E))+E &&
+            LemmaRightSimplification((A+(A+C+(m + E)))+m, D+(D+C+E), E) &&
+            (A+(A+C+(m + E)))+m == D+(D+C+E) &&
             (A+(A+C+(m + E)))+m == (A+k)+(A+k+C+E) &&
             LemmaAssociativity(A, A+C+(m + E), m) && LemmaAssociativity(A, k, A+k+C+E) &&
-            A + ((A+C+(m + E))+m) == A+(k+(A+k+C+E)) &&
+            A+((A+C+(m + E))+m) == A+(k+(A+k+C+E)) &&
             LemmaLeftSimplification(A, ((A+C+(m + E))+m), (k+(A+k+C+E))) &&
             A+C+(m+E)+m == k+(A+k+C+E) &&
-            A+C+((s + r)+E)+(s + r) == (r + s)+(A+(r + s)+C+E)// &&
-            // C = RSRSRSR... for example so 
-            //ACsrEsr == rsArsCE
-            //With C = rsG == Grs
-            //ArsGsrEsr == rsArsGrsE
-            //Ars == rsA && Esr == rsE
-            */
+            A+(r+s+t)+(m+E)+m == k+(A+k+C+E) && C == t+s+r &&
+            A+(r+s+t)+(m+E)+m == k+(A+k+(t+s+r)+E) && m == s+r &&
+            A+(r+s+t)+((s+r)+E)+m == k+(A+k+(t+s+r)+E) && k == r+s &&
+            A+(r+s+t)+((s+r)+E)+m == (r+s)+(A+k+(t+s+r)+E) && 
+            (A+((r+s)+t))+((s+r)+E)+m == (r+s)+(A+(r+s)+(t+s+r)+E)/* &&
+            LemmaAssociativity(A, r+s, t) &&
+            ((A+(r+s))+t)+((s+r)+E)+m == (r+s)+(A+(r+s)+(t+s+r)+E) */
+          } else {
+            val (r, s) = LemmaCommutation1(C, m, k)
+            k == r + s &&
+            m == s + r &&
+            true
           })
-          
-          /* &&
-          m.bigLength == k.bigLength*/
         }
         
         /* &&
