@@ -223,7 +223,7 @@ A = k1
       } else error[(String, String, String)]("should not happen")
     } else error[(String, String, String)]("should not happen")
   } ensuring {
-    k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._1 + k._2 + k._3 && A == k._3 + k._2 + k._1
+    k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._1 + k._2 + k._3 && A == k._3 + (k._2 + k._1) && LemmaAssociativity(k._3, k._2, k._1) && A == k._3 + k._2 + k._1
   }
   
   // Other lemmas
