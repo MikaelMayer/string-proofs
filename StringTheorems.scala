@@ -215,7 +215,8 @@ A = k1
          C == k._1 + k._2 &&
          B == k._2 + k._1 &&
          A == (k._1 + k._2)+k._3 &&
-         k._3+(k._2+k._1) == A && LemmaAssociativity(k._3, k._2, k._1) &&
+         A == ap + B &&
+         A == k._3+(k._2+k._1) && LemmaAssociativity(k._3, k._2, k._1) &&
          A == (k._3+k._2)+k._1
          ) {
         (k._1, k._2, k._3)
@@ -420,7 +421,9 @@ if A B = B A, then (A B)^n = A^n B^n
           C+m == k+C && (if(C.bigLength >= m.bigLength) {
             true //TODO
           } else {
-            true //TODO
+            val (r, s, t) = LemmaCommutation3(C, m, k)
+            k == r + s &&
+            m == s + r //TODO
             /*val (r, s, t) = LemmaCommutation3(C, m, k)
             k == r + s &&
             m == s + r*/ /*&&
