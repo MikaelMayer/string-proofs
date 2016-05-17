@@ -61,7 +61,12 @@ object StringTest {
   
   // Useful bigger associativity lemma
   def LemmaAssociativity4(A: String, B: String, C: String, D: String): Boolean = {
-    A + ((B + C) + D) == ((A + B) + C) + D
+    A + (B + C + D) == ((A + B) + C) + D
+  } holds
+  
+  // Useful bigger associativity lemma
+  def LemmaAssociativity5_1_2(A: String, B: String, C: String, D: String, E: String): Boolean = {
+    A + (B + C + D + E) == (A + B) + (C + D + E)
   } holds
   
   // Left simplification
@@ -341,6 +346,55 @@ A = k1
     } &&
     A + power(B + A, n) == power(A + B, n) + A
   } holds
+  
+  def canonicalForm(A: String, r: String, s: String, t: String, E: String) = {
+    require( ((A+((r+s)+t))+((s+r)+E))+(s+r) == (r+s)+(((A+(r+s))+(t+(s+r)))+E) && t+(s+r) == (r+s)+t)
+    ((A+(r+s))+(t+(s+r)))+(E+(s+r)) == (((r+s)+A)+((r+s)+t))+((s+r)+E) &&
+    (E+(s+r)).bigLength == ((s+r)+E).bigLength &&
+    LemmaRightSizeSimplification((A+(r+s))+(t+(s+r)), E+(s+r), ((r+s)+A)+((r+s)+t), (s+r)+E) &&
+    E+(s+r) == (s+r)+E &&
+    (A+(r+s))+(t+(s+r)) == ((r+s)+A)+((r+s)+t) &&
+    LemmaLeftSizeSimplification(A+(r+s), t+(s+r), (r+s)+A, (r+s)+t)  &&
+    A+(r+s) == (r+s)+A
+  } holds
+  
+  def LemmaExpansion(A: String, B: String, f1: String, f2: String, f3: String): Boolean = {
+    require(f2 == A+f1+B && f3 == A+f2+B)
+    f3 == A+(A+f1+B)+B
+  } holds
+  
+  def canonically(A: String, fnp: String, s: String, r: String, E: String) = {
+    require((r+s)+fnp == fnp+(s+r))
+     (A+((r+s)+fnp))+E == (A+(fnp+(s+r)))+E
+  } holds
+  
+  def reduceForm(n: Nat, np: Nat, A: String, B: String, C: String, D: String, E: String, F: String, s: String, r: String, t: String) = {
+    require{
+      val f = (n: Nat) => fc(n, A, B, C)
+      val g = (n: Nat) => fc(n, D, E, F)
+      E+(s+r) == (s+r)+E &&
+      A+(r+s) == (r+s)+A &&
+      C == F &&
+      C == t + (s + r) &&
+      D == A + (r + s) &&
+      B == (s + r) + E &&
+      n == Succ(np) &&
+      f(np) == g(np) &&
+      f(np)+(s+r) == (r+s)+f(np)
+    }
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
+    f(n) == A+f(np)+B &&
+    f(n) == (A+f(np)+(s + r))+E &&
+    f(n) == (A+(f(np)+(s+r)))+E &&
+    g(n) == D+g(np)+E &&
+    g(n) == D+f(np)+E &&
+    g(n) == (A+(r+s))+f(np)+E &&
+    g(n) == (A+((r+s)+f(np)))+E && canonically(A, f(np), s, r, E)
+    g(n) == (A+(f(np)+(s+r)))+E &&
+    f(n) == g(n)
+  } holds
+  
 /*
 
 
@@ -355,7 +409,7 @@ if A B = B A, then (A B)^n = A^n B^n
  (A B)^n A = A (B A)^n*/
  
   def minus1(n: Nat) = {
-    require(n match { case Succ(np) => true case Zero => false })
+    require(n.isInstanceOf[Succ])
     n match { case Succ(np) => np }
   } ensuring {
     res => n == Succ(res)
@@ -422,7 +476,7 @@ if A B = B A, then (A B)^n = A^n B^n
             val (r, s, t) = LemmaCommutation3(C, m, k)
             k == r + s &&
             m == s + r &&
-            C == r + s + t && C == t + s + r &&
+            C == r + s + t && C == t + (s + r) &&
             D == A + k &&
             B == m + E &&
             (A+(A+C+(m + E)))+(m + E) == (D+(D+C+E))+E &&
@@ -435,13 +489,27 @@ if A B = B A, then (A B)^n = A^n B^n
             A+((A+C+(m + E))+m) == A+(k+(A+k+C+E)) &&
             LemmaLeftSimplification(A, ((A+C+(m + E))+m), (k+(A+k+C+E))) &&
             A+C+(m+E)+m == k+(A+k+C+E) &&
-            A+(r+s+t)+(m+E)+m == k+(A+k+C+E) && C == t+s+r &&
-            A+(r+s+t)+(m+E)+m == k+(A+k+(t+s+r)+E) && m == s+r &&
-            A+(r+s+t)+((s+r)+E)+m == k+(A+k+(t+s+r)+E) && k == r+s &&
-            A+(r+s+t)+((s+r)+E)+m == (r+s)+(A+k+(t+s+r)+E) && 
-            (A+((r+s)+t))+((s+r)+E)+m == (r+s)+(A+(r+s)+(t+s+r)+E)/* &&
-            LemmaAssociativity(A, r+s, t) &&
-            ((A+(r+s))+t)+((s+r)+E)+m == (r+s)+(A+(r+s)+(t+s+r)+E) */
+            A+(r+s+t)+(m+E)+m == k+(A+k+C+E) && C == t+(s+r) &&
+            A+(r+s+t)+(m+E)+m == k+(A+k+(t+(s+r))+E) && m == s+r &&
+            A+(r+s+t)+((s+r)+E)+(s+r) == k+(A+k+(t+(s+r))+E) && k == r+s &&
+            A+(r+s+t)+((s+r)+E)+(s+r) == (r+s)+(A+k+(t+(s+r))+E) && 
+            (A+((r+s)+t))+((s+r)+E)+(s+r) == (r+s)+(A+(r+s)+(t+(s+r))+E) &&
+            canonicalForm(A, r, s, t, E) &&
+            E+(s+r) == (s+r)+E &&
+            A+(r+s) == (r+s)+A
+            //reduceForm(n, minus1(n), A, B, C, D, E, F, s, r, t) // Needs induction hypothesis.
+            //f(n) == g(n)
+            /* && {
+              val np = minus1(n)
+              val nq = minus1(np)
+              f(n) == A+f(np)+B &&
+              f(np) == A+f(nq)+B &&
+              f(n) == A+(A+f(nq)+B)+B && B == m + E &&
+              f(n) == A+(A+f(nq)+(m+E))+(m+E)
+              /*
+              f(n) == A+f(np)+(m+E) &&
+              f(n) == A+f(np)+((s+r)+E) &&*/
+            }*/
           } else {
             val (r, s) = LemmaCommutation1(C, m, k)
             k == r + s &&
