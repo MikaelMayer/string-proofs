@@ -99,6 +99,18 @@ object StringTest {
     (A + B).bigLength == A.bigLength + B.bigLength
   } holds
   
+  /** Proof that empty to the power of anything is empty */
+  def LemmaPowerEmpty(n: BigInt): Boolean = {
+    require(n >= 0)
+    (if( n == 0) power("", n) == ""
+    else
+      power("", n) == "" + power("", n-1) &&
+      "" + power("", n-1) == power("", n-1) &&
+      LemmaPowerEmpty(n-1) &&
+      power("", n-1) == "") &&
+    power("", n) == ""
+  } holds
+  
   /** Power can also be defined on the right */
   def LemmaPowerRight(A: String, n: BigInt): Boolean = {
     require(n > 0)
@@ -115,6 +127,69 @@ object StringTest {
     require(n >= 0)
     A + power(A, n) == power(A, n+1)
   } holds
+  
+  def LemmaPowerDistributivity(A: String, n: BigInt, m: BigInt): Boolean = {
+    require(n >= 0 && m >= 0)
+    (if(n == 0) power(A, 0) == "" && power(A, n) + power(A, m) == power(A, n + m)
+     else {
+       power(A, n) == A + power(A, n-1) &&
+       power(A, n) + power(A, m) == (A + power(A, n-1)) + power(A, m) &&
+       LemmaAssociativity(A, power(A, n-1), power(A, m)) &&
+       (A + power(A, n-1)) + power(A, m) == A + (power(A, n-1) + power(A, m)) &&
+       LemmaPowerDistributivity(A, n-1, m) &&
+       (power(A, n-1) + power(A, m)) == power(A, n-1+m) && 
+       LemmaRightEquality(A, power(A, n-1) + power(A, m), power(A, n-1+m)) &&
+       A + (power(A, n-1) + power(A, m))  == A + power(A, n-1+m) &&
+       A + power(A, n-1+m) == power(A, n-1+m+1)
+     }
+    ) && power(A, n) + power(A, m) == power(A, n + m)
+  } holds
+  
+  @library def LemmaDummyDoublePower(A: String, n: BigInt, m: BigInt): Boolean = {
+    require(n >= 0 && m >= 0)
+    power(power(A, n), m) == power(A, n*m)
+  } holds
+  
+  /** Returns nm so that power(power(A, n), m) == power(A, nm) */
+  def LemmaDoublePower(A: String, n: BigInt, m: BigInt): BigInt = {
+    require(n >= 0 && m >= 0)
+    if(m == 0) {
+      if(LemmaPowerEmpty(m) &&
+        power(power(A, n), m) == "" &&
+        power(A, 0) == "")
+        BigInt(0)
+      else error[BigInt]("This should not cause any problem")
+    } else {
+      if( power(power(A, n), m) == power(A, n) + power(power(A, n), m - 1)) {
+        val k = LemmaDoublePower(A, n, m - 1)
+        if(power(power(A, n), m-1) == power(A, k) &&
+           LemmaRightEquality(power(A, n), power(power(A, n), m - 1), power(A, k)) &&
+           power(A, n) + power(power(A, n), m - 1) == power(A, n) + power(A, k) &&
+           LemmaPowerDistributivity(A, n, k) &&
+           power(A, n) + power(A, k) == power(A, n + k) &&
+           power(power(A, n), m) == power(A, n + k)
+        )
+          n+k
+        else error[BigInt]("This should not cause any problem")
+      } else error[BigInt]("This should not cause any problem")
+      //BigInt(0)
+    }
+      /*
+      
+    else 
+      power(power(A, n), m) == power(A, n) + power(power(A, n), m - 1) &&
+      m - 1 >= 0 && 
+      LemmaDummyDoublePower(A, n, m-1) &&
+      power(power(A, n), -1+m) == power(A, n*(-1+m)) && 
+      power(A, n) + power(power(A, n), m - 1) == power(A, n) + power(A, n*(m - 1)) &&
+      LemmaPowerDistributivity(A, n, n*(m+1)) &&
+      power(A, n) + power(A, n*(m - 1)) == power(A, n+n*(m - 1)) &&
+      power(A, n+n*(m - 1)) == power(A, n*m)
+    )// && power(power(A, n), m) == power(A, n*m)
+    */
+  } ensuring {
+    (nm: BigInt) => nm >= 0 && power(power(A, n), m) == power(A, nm)
+  }
   
   /*3) prefix-introduce
 | p |`< | q |  && p A = q B
@@ -183,14 +258,62 @@ There exist a constant k such that q = k p and A = B k */
         LemmaLeftSimplification(A, B+(A+k), k+B+A) &&
         LemmaAssociativity(B, A, k) &&
         B+A+k == k+B+A) {
-          if(k.bigLength == A.bigLength) {
+          if(k.bigLength == A.bigLength) { 
             if(LemmaRightSimplification(B+A,k+B,A) && B+A == k+B) {
-              error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+              val (k1, k2, n) = LemmaCommutation2Explicit(B, A, k)
+              if( k == k1 + k2 &&
+                  A == k2 + k1 &&
+                  B == power(k1+k2, n) + k1 &&
+                  C == (k2 + k1) + (k1 + k2) &&
+                  (A + B) +  ((k2 + k1) + (k1 + k2)) == (C + B) + (k2 + k1) &&
+                  LemmaAssociativity(A+B, k2+k1, k1+k2) &&
+                  (A + B) +  ((k2 + k1) + (k1 + k2)) == ((A + B) +  (k2 + k1)) + (k1 + k2) &&
+                  ((A + B) +  (k2 + k1)) + (k1 + k2) ==  (C + B) + (k2 + k1) &&
+                  (k2+k1).bigLength == (k1+k2).bigLength &&
+                  LemmaRightSizeSimplification(A+B+(k2+k1), k1+k2, C+B, k2+k1) &&
+                  k1+k2 == k2+k1
+                 ) {
+                val (kt, kn1, kn2) = LemmaGCD(k1, k2)
+                if( k1 == power(kt, kn1) &&
+                    k2 == power(kt, kn2) &&
+                    k1 + k2 == power(kt, kn1) + power(kt, kn2) &&
+                    LemmaPowerDistributivity(kt, kn1, kn2) &&
+                    power(kt, kn1) + power(kt, kn2) == power(kt, kn1 + kn2) &&
+                    A == power(kt, kn1+kn2) &&
+                    // Now prove B
+                    power(k1+k2, n) + k1 == power(power(kt, kn1)+k2, n) + k1 &&
+                    power(power(kt, kn1)+k2, n) + k1 ==  power(power(kt, kn1)+k2, n) + power(kt, kn1) &&
+                    power(power(kt, kn1)+k2, n) + power(kt, kn1) == power(power(kt, kn1)+power(kt, kn2), n) + power(kt, kn1) &&
+                    power(kt, kn1)+power(kt, kn2) == power(kt, kn1+kn2) &&
+                    power(power(kt, kn1)+power(kt, kn2), n) + power(kt, kn1) ==  power(power(kt, kn1+kn2), n) + power(kt, kn1)
+                    ) {
+                  val kn1kn2n = LemmaDoublePower(kt, kn1+kn2, n)
+                  if(power(power(kt, kn1+kn2), n) == power(kt, kn1kn2n) &&
+                     power(power(kt, kn1+kn2), n) + power(kt, kn1) == power(kt, kn1kn2n) + power(kt, kn1) &&
+                     LemmaPowerDistributivity(kt, kn1kn2n, kn1) &&
+                     power(kt, kn1kn2n) + power(kt, kn1) == power(kt, kn1kn2n + kn1) &&
+                     B == power(kt, kn1kn2n + kn1) &&
+                     C == (k2 + k1) + (k1 + k2) &&
+                     (k2 + k1) == (k1 + k2) &&
+                     A == k2 + k1 &&
+                     LemmaLeftEquality(k2+k1, k1+k2, k1+k2) &&
+                     (k2 + k1) + (k1 + k2) ==  (k2 + k1) + (k2 + k1) &&
+                     (k2 + k1) + (k2 + k1) == A + A &&
+                     A + A == power(kt, kn1+kn2) + power(kt, kn1+kn2) &&
+                     LemmaPowerDistributivity(kt, kn1+kn2, kn1+kn2) &&
+                     power(kt, kn1+kn2) + power(kt, kn1+kn2) == power(kt, kn1+kn2+(kn1+kn2)) &&
+                     C == power(kt, kn1+kn2+(kn1+kn2))
+                  ) {
+                    (kt, kn1+kn2, kn1+kn2+(kn1+kn2), kn1+kn2+(kn1+kn2))
+                  } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+                } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+                // A == k2 + k1, B == power(k1+k2, n)+k1, C == k2 + k1 + k1 + k2
+              } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
             } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
-          } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+          } else error[(String, BigInt, BigInt, BigInt)]("need to consider the case where lengths are different")
         //A+B+A+k == A+k+B+A
       } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
-    } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+    } else error[(String, BigInt, BigInt, BigInt)]("need to consider the case A.bigLength > C.bigLength")
     
   } ensuring { r => r._2 >= 0 && r._3 >= 0 && r._4 >= 0 && A == power(r._1, r._2) && B == power(r._1, r._3) && C == power(r._1, r._4) }
 
