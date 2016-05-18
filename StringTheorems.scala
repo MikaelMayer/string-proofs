@@ -136,6 +136,25 @@ There exist a constant k such that q = k p and A = B k */
     require(A + B == C + D && B.bigLength < D.bigLength)
     A.bigLength > C.bigLength 
   } holds
+  
+  /** A + B == B + A ==> there exists t, n, m such that B = nT, A=mT*/
+  def LemmaGCD(A: String, B: String): (String, BigInt, BigInt) = {
+    require(A + B == B + A)
+    if(A.bigLength == B.bigLength) {
+      if(LemmaLeftSizeSimplification(A, B, B, A) && A == B) {
+        (A, BigInt(1), BigInt(1))
+      } else error[(String, BigInt, BigInt)]("This should not happen")
+    } else if(A.bigLength < B.bigLength) {
+      val (t, na, nb) = LemmaGCD(B, A)
+      (t, nb, na)
+    } else {
+      val k = Lemma005PrefixIntroduce(B, A, A, B)
+      if(A == B + k && A == k + B) {
+        val (t, nb, nk) = LemmaGCD(B, k)
+        (t, nb+nk, nb)
+      } else error[(String, BigInt, BigInt)]("This should not happen")
+    }
+  } ensuring { r => r._2 >= 0 && r._3 >= 0 && A == power(r._1, r._2) && B == power(r._1, r._3) }
 
 /*
 If A + B == C + A and |A| <= |C|, then there exists k1 and k2 such that
@@ -376,6 +395,28 @@ A = k1
   def canonically(A: String, fnp: String, s: String, r: String, E: String) = {
     require((r+s)+fnp == fnp+(s+r))
      (A+((r+s)+fnp))+E == (A+(fnp+(s+r)))+E
+  } holds
+  
+  def augmentedTheorem(A1f: String, A1g: String, B1f: String, B1g: String, A0f: String, A0g: String, B0f: String, B0g: String,
+      r1: String, s1: String, t1: String, r0: String, s0: String, t0: String, Ef: String, Eg: String, fn: String, gn: String
+  ) = {
+    require(A1f+(r1+s1) == (r1+s1)+A1f &&
+            Ef == t1 + (s1 + r1) &&
+            Ef == (r1+s1) + t1 &&
+            A1g == A1f+(r1+s1) &&
+            B1f ==(s1+r1) + B1g &&
+            B1f + (s1+r1) == (s1+r1)+B1f &&
+            A0f+(r0+s0) == (r0+s0)+A0f &&
+            Eg == t0 + (s0 + r0) &&
+            Eg == (r0+s0) + t0 &&
+            A0g == A0f+(r0+s0) &&
+            B0f ==(s0+r0) + B0g &&
+            B0f + (s0+r0) == (s0+r0)+B0f &&
+            Ef == Eg &&
+            fn == gn &&
+            fn+(s1+r1) == (r1+s1)+fn &&
+            fn+(s0+r0) == (r0+s0)+fn)
+    (A1f+fn+B1f)+(s1+r1) == (r1+s1)+(A1f+fn+B1f)
   } holds
 
   def reduceForm(n: Nat, np: Nat, A: String, B: String, C: String, D: String, E: String, F: String, s: String, r: String, t: String) = {
