@@ -111,6 +111,11 @@ object StringTest {
     power(A, n - 1) + A == power(A, n)
   } holds
   
+  def LemmaPowerLeftPlus1(A: String, n: BigInt): Boolean = {
+    require(n >= 0)
+    A + power(A, n) == power(A, n+1)
+  } holds
+  
   /*3) prefix-introduce
 | p |`< | q |  && p A = q B
 <=>
@@ -155,6 +160,39 @@ There exist a constant k such that q = k p and A = B k */
       } else error[(String, BigInt, BigInt)]("This should not happen")
     }
   } ensuring { r => r._2 >= 0 && r._3 >= 0 && A == power(r._1, r._2) && B == power(r._1, r._3) }
+  
+  def LemmaTripleGCD(A: String, B: String, C: String): (String, BigInt, BigInt, BigInt) = {
+    require(A+B+C == C+B+A && A.bigLength != C.bigLength)
+    if(A.bigLength < C.bigLength) {
+      val k = Lemma005PrefixIntroduce(A, B+C, C, B+A)
+      if(C == A + k && B+C == k+(B+A) &&
+        (A+B)+C == (C+B)+A &&
+        LemmaRightEquality(A+B,C,A+k) &&
+        (A+B)+C == (A+B)+(A+k) &&
+        (A+B)+(A+k) == (C+B)+A &&
+        LemmaLeftEquality(C, A+k, B) &&
+        C+B == A+k+B &&
+        LemmaLeftEquality(C+B, A+k+B, A) &&
+        (C+B)+A == ((A + k)+B)+A &&
+        (A+B)+(A+k) == ((A + k)+B)+A &&
+        LemmaAssociativity(A, B, A+k) &&
+        (A+B)+(A+k) == A+(B+(A+k)) &&
+        LemmaAssociativity4(A, k, B, A) &&
+        ((A + k)+B)+A == A + (k+B+A) && 
+        A+(B+(A+k)) == A + (k+B+A) &&
+        LemmaLeftSimplification(A, B+(A+k), k+B+A) &&
+        LemmaAssociativity(B, A, k) &&
+        B+A+k == k+B+A) {
+          if(k.bigLength == A.bigLength) {
+            if(LemmaRightSimplification(B+A,k+B,A) && B+A == k+B) {
+              error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+            } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+          } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+        //A+B+A+k == A+k+B+A
+      } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+    } else error[(String, BigInt, BigInt, BigInt)]("This should not happen")
+    
+  } ensuring { r => r._2 >= 0 && r._3 >= 0 && r._4 >= 0 && A == power(r._1, r._2) && B == power(r._1, r._3) && C == power(r._1, r._4) }
 
 /*
 If A + B == C + A and |A| <= |C|, then there exists k1 and k2 such that
@@ -169,7 +207,7 @@ A = k1
   } ensuring {
     k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._1
   }
-
+  
 /*
   If A + B == C + A and |A| <= |C|, then there exists k1 and k2 such that
   C = k1+k2
@@ -223,10 +261,41 @@ A = k1
       if (LemmaPreCondCommutation(A, B, C)) {
         val k = LemmaCommutation2(ap, B, C)
         (k._1, k._2, k._1 + k._2 + k._3) 
-      } else (A, B, C) // Dummy, used because assert, assume, require do not work above.
+      } else error[(String, String, String)]("Does not happen")
     }
   } ensuring {
     k => C == k._1 + k._2 && B == k._2 + k._1 && A == k._3
+  }
+  
+  /** A + B == C + A ==> C == k1+k2 && B == k2+k1 && A == n(k1+k2)+k1 */
+  def LemmaCommutation2Explicit(A: String, B: String, C: String): (String, String, BigInt) = {
+    require(A + B == C + A)
+    if(C.bigLength >= A.bigLength) {
+      val (k1, k2) = LemmaCommutation1(A, B, C)
+      (k1, k2, BigInt(0))
+    } else {
+      val (c, ap) = split(A, C.bigLength)
+      if (LemmaPreCondCommutation(A, B, C) && C == c) {
+        val k = LemmaCommutation2Explicit(ap, B, C)
+        if(C == k._1 + k._2 && B == k._2 + k._1 &&
+           ap == power(k._1+k._2,k._3)+k._1 && 
+           A == C + ap &&
+           C+ap == (k._1 + k._2) + ap &&
+           (k._1 + k._2) + ap == (k._1 + k._2) + (power(k._1+k._2,k._3)+k._1) &&
+           LemmaAssociativity(k._1+k._2, power(k._1+k._2,k._3), k._1) &&
+           (k._1 + k._2) + (power(k._1+k._2,k._3)+k._1) == ((k._1 + k._2) + power(k._1+k._2, k._3))+k._1 &&
+           LemmaPowerLeftPlus1(k._1 + k._2, k._3) &&
+           (k._1 + k._2) + power(k._1+k._2, k._3) == power(k._1+k._2, k._3 + 1) &&
+           LemmaLeftEquality((k._1 + k._2) + power(k._1+k._2, k._3), power(k._1+k._2, k._3 + 1), k._1) &&
+           ((k._1 + k._2) + power(k._1+k._2, k._3))+k._1 == (power(k._1+k._2, k._3 + 1))+k._1 &&
+           A == (power(k._1+k._2, k._3 + 1))+k._1
+           ) {
+          (k._1, k._2, k._3 + 1)
+        } else error[(String, String, BigInt)]("Does not happen")
+      } else error[(String, String, BigInt)]("Does not happen")
+    }
+  } ensuring {
+    k => C == k._1 + k._2 && B == k._2 + k._1 && k._3 >= 0 && A == power(k._1+k._2, k._3)+k._1
   }
   
   /** A + B == C + A && |C| < |A| ==> C == k1k2 && B == k2k1 && A==k1k2k3 && A == k3k2k1 */
