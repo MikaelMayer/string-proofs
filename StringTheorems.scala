@@ -396,28 +396,6 @@ A = k1
     require((r+s)+fnp == fnp+(s+r))
      (A+((r+s)+fnp))+E == (A+(fnp+(s+r)))+E
   } holds
-  
-  def augmentedTheorem(A1f: String, A1g: String, B1f: String, B1g: String, A0f: String, A0g: String, B0f: String, B0g: String,
-      r1: String, s1: String, t1: String, r0: String, s0: String, t0: String, Ef: String, Eg: String, fn: String, gn: String
-  ) = {
-    require(A1f+(r1+s1) == (r1+s1)+A1f &&
-            Ef == t1 + (s1 + r1) &&
-            Ef == (r1+s1) + t1 &&
-            A1g == A1f+(r1+s1) &&
-            B1f ==(s1+r1) + B1g &&
-            B1f + (s1+r1) == (s1+r1)+B1f &&
-            A0f+(r0+s0) == (r0+s0)+A0f &&
-            Eg == t0 + (s0 + r0) &&
-            Eg == (r0+s0) + t0 &&
-            A0g == A0f+(r0+s0) &&
-            B0f ==(s0+r0) + B0g &&
-            B0f + (s0+r0) == (s0+r0)+B0f &&
-            Ef == Eg &&
-            fn == gn &&
-            fn+(s1+r1) == (r1+s1)+fn &&
-            fn+(s0+r0) == (r0+s0)+fn)
-    (A1f+fn+B1f)+(s1+r1) == (r1+s1)+(A1f+fn+B1f)
-  } holds
 
   def reduceForm(n: Nat, np: Nat, A: String, B: String, C: String, D: String, E: String, F: String, s: String, r: String, t: String) = {
     require{
@@ -522,8 +500,8 @@ if A B = B A, then (A B)^n = A^n B^n
     res => n == Succ(res)
   }
   
-  /*@library
-  def dummyTheorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
+  @library
+  def dummyTheorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String): (String, String) = {
     require{
       val f = (n: Nat) => fc(n, A, B, C)
       val g = (n: Nat) => fc(n, D, E, F)
@@ -532,8 +510,12 @@ if A B = B A, then (A B)^n = A^n B^n
       f(Succ(Succ(Zero))) == g(Succ(Succ(Zero)))}
     val f = (n: Nat) => fc(n, A, B, C)
     val g = (n: Nat) => fc(n, D, E, F)
+    dummyTheorem(n, A, B, C, D, E, F)
+  } ensuring { (res) =>
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
     f(n) == g(n)
-  } holds*/
+  }
   
   def theorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
     require{
