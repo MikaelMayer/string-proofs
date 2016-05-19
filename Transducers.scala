@@ -3,6 +3,13 @@ import leon.lang._
 import leon.annotation._
 import leon.collection._
 
+/**
+  Implementation of the unary yield-deterministic transducer in the paper
+  http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7354436
+  
+  Equivalence of deterministic top-down tree-to-string transducers is decidable
+  by Helmut Seidl, Sebastian Maneth, Gregor Kemper (2015)
+*/
 object YDT {
   case class Tree(symbol: Symbol, children: List[Tree]) {
     require(symbol.arity == children.length)
@@ -101,15 +108,13 @@ object YDT {
         case Nil() => BigInt(0)
         case Cons(I, tail) => evaluateForAllUnaryExpr(f, tail, x) + BigInt(1)
         case c@Cons(S(j, i), tail) => 
-          if(LemmaIsConsistent2(c, f) && isConsistent(tail, f)) {
-          if(i >= 1 && i <= f.arity && j >= 1 && j <= nbStates) {
-          if (ListSpecs.applyForAll(x.content, i-1, (xi: Vector[BigInt]) => xi.size == nbStates) &&
-            x.content(i-1).size == nbStates) {
+          if( LemmaIsConsistent2(c, f) && isConsistent(tail, f) &&
+              i >= 1 && i <= f.arity && j >= 1 && j <= nbStates &&
+              ListSpecs.applyForAll(x.content, i-1, (xi: Vector[BigInt]) => xi.size == nbStates) &&
+              x.content(i-1).size == nbStates) {
             val xi: Vector[BigInt] = x.content(i-1)
             val res = evaluateForAllUnaryExpr2(xi, j)
             res + evaluateForAllUnaryExpr(f, tail, x)
-          } else error[BigInt]("Should not happen")
-          } else error[BigInt]("Should not happen")
           } else error[BigInt]("Should not happen")
       }
     }
