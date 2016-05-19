@@ -1,15 +1,16 @@
+/**
+  Equivalence of deterministic top-down tree-to-string transducers is decidable
+  by Helmut Seidl, Sebastian Maneth, Gregor Kemper (2015)
+  
+  Implementation of the unary yield-deterministic transducer in the paper
+  http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7354436
+*/
+
 
 import leon.lang._
 import leon.annotation._
 import leon.collection._
 
-/**
-  Implementation of the unary yield-deterministic transducer in the paper
-  http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7354436
-  
-  Equivalence of deterministic top-down tree-to-string transducers is decidable
-  by Helmut Seidl, Sebastian Maneth, Gregor Kemper (2015)
-*/
 object YDT {
   case class Tree(symbol: Symbol, children: List[Tree]) {
     require(symbol.arity == children.length)
