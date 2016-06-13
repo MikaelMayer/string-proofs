@@ -89,6 +89,10 @@ object StringTest {
     A + (B + C + D + E) == (A + B) + (C + D + E)
   } holds
   
+  def LemmaAssociativity5_2_3__1_2_2(A: String, B: String, C: String, D: String, E: String): Boolean = {
+    (A+B)+(C+D+E) == A+(B+C)+(D+E)
+  } holds
+  
   // Left simplification
   def LemmaLeftSimplification(A: String, B: String, C: String): Boolean = {
     require(A + B == A + C)
@@ -150,8 +154,8 @@ object StringTest {
   
   def LemmaPowerDistributivity(A: String, n: BigInt, m: BigInt): Boolean = {
     require(n >= 0 && m >= 0)
-    (if(n == 0) power(A, 0) == "" && power(A, n) + power(A, m) == power(A, n + m)
-     else {
+    if(n == 0) power(A, 0) == "" && power(A, n) + power(A, m) == power(A, n + m)
+    else {
        power(A, n) == A + power(A, n-1) &&
        power(A, n) + power(A, m) == (A + power(A, n-1)) + power(A, m) &&
        LemmaAssociativity(A, power(A, n-1), power(A, m)) &&
@@ -160,10 +164,12 @@ object StringTest {
        (power(A, n-1) + power(A, m)) == power(A, n-1+m) && 
        LemmaRightEquality(A, power(A, n-1) + power(A, m), power(A, n-1+m)) &&
        A + (power(A, n-1) + power(A, m))  == A + power(A, n-1+m) &&
-       A + power(A, n-1+m) == power(A, n-1+m+1)
-     }
-    ) && power(A, n) + power(A, m) == power(A, n + m)
-  } holds
+       A + power(A, n-1+m) == power(A, n-1+m+1) &&
+       power(A, n) + power(A, m) == power(A, n + m)
+    }
+  } ensuring {
+    (res: Boolean) => res && power(A, n) + power(A, m) == power(A, n + m)
+  }
 
   /** Returns nm so that power(power(A, n), m) == power(A, nm) */
   def LemmaDoublePower(A: String, n: BigInt, m: BigInt): BigInt = {
@@ -685,6 +691,64 @@ A = k1
     res && A + (r+s) == (r+s) + A && E + (s+r) == (s+r) + E
   }
   
+  def reduceFormCIsr(A: String, B: String, C: String, D: String, E: String, s: String, r: String, m: String, k: String) = {
+    require(A+(A+C+B)+B == D+(D+C+E)+E &&
+      k == r + s &&
+      m == s + r &&
+      C == r &&
+      D == A + k &&
+      B == m + E
+    )
+    if(
+      (A+(A+C+(m + E)))+(m + E) == (D+(D+C+E))+E &&
+    LemmaAssociativity(A+(A+C+(m + E)), m, E) &&
+    ((A+(A+C+(m + E)))+m) + E == (D+(D+C+E))+E &&
+    LemmaRightSimplification((A+(A+C+(m + E)))+m, D+(D+C+E), E) &&
+    (A+(A+C+(m + E)))+m == D+(D+C+E) &&
+    (A+(A+C+(m + E)))+m == (A+k)+(A+k+C+E) &&
+    LemmaAssociativity(A, A+C+(m + E), m) && LemmaAssociativity(A, k, A+k+C+E) &&
+    A+((A+C+(m + E))+m) == A+(k+(A+k+C+E)) &&
+    LemmaLeftSimplification(A, ((A+C+(m + E))+m), (k+(A+k+C+E))) &&
+    A+C+(m+E)+m == k+(A+k+C+E) &&
+    A+r+(m+E)+m == k+(A+k+C+E) && C == r &&
+    A+r+(m+E)+m == k+(A+k+r+E) && m == s+r &&
+    A+r+((s+r)+E)+(s+r) == k+(A+k+r+E) && k == r+s &&
+    A+r+((s+r)+E)+(s+r) == (r+s)+(A+k+r+E) && 
+      ((A+r) + ((s+r)+E))+(s+r)               ==  (r+s)+(((A+(r+s))+r)+E) &&
+      LemmaAssociativity5_2_3__1_2_2(A, r, s, r, E) &&
+      (A+r) + ((s+r)+E) == (A+(r+s))+(r+E) &&
+      LemmaLeftEquality((A+r) + ((s+r)+E), (A+(r+s))+(r+E), s+r) &&
+      (A+r) + ((s+r)+E) + (s+r) == ((A+(r+s))+(r+E)) + (s+r) &&
+      LemmaAssociativity((A+(r+s)), (r+E), (s+r)) &&
+      ((A+(r+s))+(r+E)) + (s+r) == (A+(r+s))+((r+E) + (s+r)) &&
+                                              LemmaAssociativity4_1_3(A, r+s, r, E) &&
+                                                A + ((r+s) + r + E) == ((A + (r+s)) + r) + E &&
+                                                ((A+(r+s))+r)+E == A+(((r+s)+r+E)) &&
+                                              LemmaRightEquality(r+s, A+(r+s)+r+E, A+((r+s)+r+E)) &&
+                                              (r+s)+(A+(r+s)+r+E) == (r+s)+(A+((r+s)+r+E)) &&
+                                              LemmaAssociativity(r+s, A, ((r+s)+r+E)) &&
+                                              (r+s)+(A+((r+s)+r+E)) == ((r+s)+A)+((r+s)+r+E) &&
+      (A+(r+s))+((r+E) + (s+r)) == ((A+(r+s))+(r+E)) + (s+r) &&
+      ((A+(r+s))+(r+E)) + (s+r) == (r+s)+(((A+(r+s))+r)+E) &&
+      (r+s)+(((A+(r+s))+r)+E) == ((r+s)+A)+((r+s)+r+E) &&
+      (A+(r+s))+((r+E) + (s+r)) ==  ((r+s)+A)+((r+s)+r+E) &&
+    lemmaCommuteSize(r+s, A) &&
+    ((r+s)+A).bigLength == (A+(r+s)).bigLength &&
+    LemmaLeftSizeSimplification(A + (r+s), ((r+E) + (s+r)), (r+s)+A, ((r+s)+r+E)) &&
+    A + (r+s) == (r+s) + A && ((r+E) + (s+r)) == ((r+s)+r+E) &&
+    LemmaAssociativity(r, E, s+r) &&
+    ((r+E) + (s+r)) == r+(E+(s+r)) &&
+    LemmaAssociativity4_1_3(r, E, s, r) &&
+    ((r+s)+r)+E == r+((s+r)+E) &&
+    r+(E+(s+r)) == r+((s+r)+E) &&
+    LemmaLeftSizeSimplification(r, E+(s+r) , r, (s+r)+E) &&
+    E + (s+r) == (s+r) + E )
+      true
+    else error[Boolean]("This should not happen")
+  } ensuring { (res: Boolean) =>
+    res && A + (r+s) == (r+s) + A && E + (s+r) == (s+r) + E
+  }
+  
 /*
 
 
@@ -827,6 +891,85 @@ if A B = B A, then (A B)^n = A^n B^n
     ) && (f(n) == g(n) && (r+s) + f(n) == f(n) + (s + r))
   } holds
   
+  def equalitySimpleC(C: String, s: String, r: String): Boolean = {
+    require(C == r)
+    LemmaLeftEquality(C, r, s+r) &&
+    C + (s+r) == r + (s+r)&&
+    LemmaAssociativity(r, s, r) &&
+    r + (s+r) == (r + s)+r &&
+    LemmaRightEquality(r+s, r, C) &&
+    (r+s)+r == (r+s) + C
+  } ensuring {
+    (res: Boolean) => C + (s+r) == (r+s) + C
+  }
+  
+/*  def otherCase(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
+    require{
+      val f = (n: Nat) => fc(n, A, B, C)
+      val g = (n: Nat) => fc(n, D, E, F)
+      f(Zero) == g(Zero) &&
+      f(Succ(Zero)) == g(Succ(Zero))  &&
+      f(Succ(Succ(Zero))) == g(Succ(Succ(Zero))) &&
+      E.bigLength >= B.bigLength
+    }
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
+    
+    val m = Lemma006SuffixIntroduce(A+C, B, D+C, E)
+    if(E == m + B && A+C == (D+C) + m &&    // ACB = DCE <=> ACm = DC
+    LemmaRightGreaterSmaller(A+C, B, D+C, E) &&
+    (A+C).bigLength > (D+C).bigLength &&
+    LemmaLength(A, C) && LemmaLength(D, C) &&
+    A.bigLength + C.bigLength > D.bigLength + C.bigLength &&
+    A.bigLength > D.bigLength &&
+    LemmaAssociativity(D, C, m) &&
+    A+C == D+(C+m)) {
+      val k = Lemma005PrefixIntroduce(D, C+m, A, C)
+      if(A == D+k &&                    // ACm = DC <=> Cm = kC
+      (D+k)+C == (D+C)+m &&
+      LemmaAssociativity(D, k, C) && LemmaAssociativity(D, C, m) &&
+      D+(k+C) == D+(C+m) &&
+      LemmaLeftSimplification(D, k+C, C+m) &&
+      C+m == k+C) {
+        if(C.bigLength > k.bigLength) {
+          val (r, s, t) = LemmaCommutation3(C, m, k)
+          k == r + s &&
+          m == s + r &&
+          C == r + s + t && C == t + (s + r) &&
+          A == D + k &&
+          LemmaRightEquality(D, k, r+s) &&
+          D + k == D + (r+s) &&
+          A == D + (r+s) &&
+          E == m + B
+          LemmaLeftEquality(m, s+r, B) &&
+          m + B == (s+r) + B &&
+          E == (s+r) + B &&
+          reduceForm2(D, E, C, A, B, s, r, t, m, k) &&
+          theoremCase1(n, D, E, C, A, B, F, r, s) &&
+          f(n) == g(n)
+        } else {
+          val (r, s) = LemmaCommutation1(C, m, k)
+          if(
+            k == r + s &&
+            m == s + r &&
+            C == r && 
+            equalitySimpleC(C, s, r) &&
+            (r+s)+r == (r+s) + C &&
+            LemmaRightEquality(D, k, r+s) &&
+            D + k == D + (r + s))
+            if(reduceFormCIsr(D, E, C, A, B, s, r, m, k))
+              if(theoremCase1(n, D, E, C, A, B, F, r, s))
+                f(n) == g(n)
+              else error[Boolean]("this should not happen")
+            else error[Boolean]("this should not happen")
+          else error[Boolean]("this should not happen")
+        }
+      } else error[Boolean]("this should not happen")
+    } else error[Boolean]("this should not happen")
+  }
+
+*/
+  
   def EqualityBetweenListPrinters(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
     require{
       val f = (n: Nat) => fc(n, A, B, C)
@@ -836,114 +979,168 @@ if A B = B A, then (A B)^n = A^n B^n
       f(Succ(Succ(Zero))) == g(Succ(Succ(Zero)))}
     val f = (n: Nat) => fc(n, A, B, C)
     val g = (n: Nat) => fc(n, D, E, F)
-    f(Zero) == C &&
-    g(Zero) == F &&
-    C == F &&
-    f(Succ(Zero)) == A+C+B &&
-    g(Succ(Zero)) == D+F+E &&
-    A+C+B == D+C+E &&
-    f(Succ(Succ(Zero))) == A+(A+C+B)+B &&
-    g(Succ(Succ(Zero))) == D+(D+F+E)+E &&
-    A+(A+C+B)+B == D+(D+C+E)+E &&
-    (if(E.bigLength == B.bigLength) {
-      true
-      /*                                          (A+C)+B == (D+C)+E &&
-      LemmaRightSizeSimplification(A+C,B,D+C,E)  &&     B == E &&
-      LemmaRightSimplification(A+C,D+C,B) &&          A+C == D+C  &&
-      LemmaRightSimplification(A,D,C) &&                A == D &&
-                                                     f(n) == g(n)*/
-    } else (n match {
-      case Zero => f(n) == g(n)
-      case Succ(Zero) => f(n) == g(n)
+    if((if( f(Zero) == C &&
+        g(Zero) == F &&
+        C == F &&
+        f(Succ(Zero)) == A+C+B &&
+        g(Succ(Zero)) == D+F+E &&
+        A+C+B == D+C+E &&
+        f(Succ(Succ(Zero))) == A+(A+C+B)+B &&
+        g(Succ(Succ(Zero))) == D+(D+F+E)+E &&
+        A+(A+C+B)+B == D+(D+C+E)+E) {
+      if(E.bigLength == B.bigLength) {
+        if(
+                                                 (A+C)+B == (D+C)+E &&
+        LemmaRightSizeSimplification(A+C,B,D+C,E)  &&     B == E &&
+        LemmaRightSimplification(A+C,D+C,B) &&          A+C == D+C  &&
+        LemmaRightSimplification(A,D,C) &&                A == D) {
+          if(f(n) == g(n)) {
+            true
+          } else error[Boolean]("This should not happen")
+        } else error[Boolean]("This should not happen")
+    } else {
+      n match {
+      case Zero => 
+        if(f(n) == g(n))
+          true
+        else error[Boolean]("This should not happen")
+      case Succ(Zero) =>
+        if(f(n) == g(n))
+          true
+        else error[Boolean]("This should not happen")
       case Succ(np) => 
         if(E.bigLength < B.bigLength) {
           val m = Lemma006SuffixIntroduce(D+C, E, A+C, B)
-          B == m + E && D+C == (A+C) + m &&    // ACB = DCE <=> ACm = DC
+          if(B == m + E && D+C == (A+C) + m &&    // ACB = DCE <=> ACm = DC
           LemmaRightGreaterSmaller(D+C, E, A+C, B) &&
           (D+C).bigLength > (A+C).bigLength &&
           LemmaLength(D, C) && LemmaLength(A, C) &&
           D.bigLength + C.bigLength > A.bigLength + C.bigLength &&
           D.bigLength > A.bigLength &&
           LemmaAssociativity(A, C, m) &&
-          D+C == A+(C+m) && {
+          D+C == A+(C+m)) {
             val k = Lemma005PrefixIntroduce(A, C+m, D, C)
-            D == A+k &&                    // ACm = DC <=> Cm = kC
+            if(D == A+k &&                    // ACm = DC <=> Cm = kC
             (A+k)+C == (A+C)+m &&
             LemmaAssociativity(A, k, C) && LemmaAssociativity(A, C, m) &&
             A+(k+C) == A+(C+m) &&
             LemmaLeftSimplification(A, k+C, C+m) &&
-            C+m == k+C && (
+            C+m == k+C) {
               if(C.bigLength > k.bigLength) {
                 val (r, s, t) = LemmaCommutation3(C, m, k)
-                k == r + s &&
-                m == s + r &&
-                C == r + s + t && C == t + (s + r) &&
-                D == A + k &&
-                LemmaRightEquality(A, k, r+s) &&
-                A + k == A + (r+s) &&
-                D == A + (r+s) &&
-                B == m + E
-                LemmaLeftEquality(m, s+r, E) &&
-                m + E == (s+r) + E &&
-                B == (s+r) + E &&
-                reduceForm2(A, B, C, D, E, s, r, t, m, k) &&
-                theoremCase1(n, A, B, C, D, E, F, r, s) &&
-                f(n) == g(n)
+                if(k == r + s &&
+                    m == s + r &&
+                    C == r + s + t && C == t + (s + r) &&
+                    D == A + k &&
+                    LemmaRightEquality(A, k, r+s) &&
+                    A + k == A + (r+s) &&
+                    D == A + (r+s) &&
+                    B == m + E &&
+                    LemmaLeftEquality(m, s+r, E) &&
+                    m + E == (s+r) + E &&
+                    B == (s+r) + E) {
+                  if(reduceForm2(A, B, C, D, E, s, r, t, m, k)) {
+                    if(theoremCase1(n, A, B, C, D, E, F, r, s)) {
+                      if(f(n) == g(n)) {
+                        true
+                      } else error[Boolean]("this should not happen")
+                    } else error[Boolean]("this should not happen")
+                  } else error[Boolean]("this should not happen")
+              } else error[Boolean]("this should not happen")
               } else {
                 val (r, s) = LemmaCommutation1(C, m, k)
-                k == r + s &&
-                m == s + r &&
-                C == r && 
-                r + (s+r) == (r+s) + r &&
-                LemmaLeftEquality(C, r, s+r) &&
-                C + (s+r) == r + (s+r)&&
-                LemmaAssociativity(r, s, r) &&
-                r + (s+r) == (r + s)+r &&
-                LemmaRightEquality(r+s, r, C) &&
-                (r+s)+r == (r+s) + C/* &&
-                LemmaRightEquality(A, k, r+s) &&
-                A + k == A + (r + s) &&
-                D == A + (r + s) &&
-                B == (s + r) + E &&
-                E + (s+r) == (s+r) + E &&
-                A+(r+s) == (r+s) + A*//* &&
-                C == F*/
-                //theoremCase1(n, A, B, C, D, E, F, r, s)  &&
+                if(
+                  k == r + s &&
+                  m == s + r &&
+                  C == r && 
+                  equalitySimpleC(C, s, r) &&
+                  (r+s)+r == (r+s) + C &&
+                  LemmaRightEquality(A, k, r+s) &&
+                  A + k == A + (r + s))
+                  if(reduceFormCIsr(A, B, C, D, E, s, r, m, k))
+                    if(theoremCase1(n, A, B, C, D, E, F, r, s) &&
+                      f(n) == g(n)
+                    )
+                      true
+                    else error[Boolean]("this should not happen")
+                  else error[Boolean]("this should not happen")
+                else error[Boolean]("this should not happen")
               }
-            )
-          }
+            } else error[Boolean]("this should not happen")
+          } else error[Boolean]("this should not happen")
         } else {
-            E.bigLength > B.bigLength
+          val m = Lemma006SuffixIntroduce(A+C, B, D+C, E)
+          if(E == m + B && A+C == (D+C) + m &&    // ACB = DCE <=> ACm = DC
+          LemmaRightGreaterSmaller(A+C, B, D+C, E) &&
+          (A+C).bigLength > (D+C).bigLength &&
+          LemmaLength(A, C) && LemmaLength(D, C) &&
+          A.bigLength + C.bigLength > D.bigLength + C.bigLength &&
+          A.bigLength > D.bigLength &&
+          LemmaAssociativity(D, C, m) &&
+          A+C == D+(C+m)) {
+            val k = Lemma005PrefixIntroduce(D, C+m, A, C)
+            if(A == D+k &&                    // ACm = DC <=> Cm = kC
+            (D+k)+C == (D+C)+m &&
+            LemmaAssociativity(D, k, C) && LemmaAssociativity(D, C, m) &&
+            D+(k+C) == D+(C+m) &&
+            LemmaLeftSimplification(D, k+C, C+m) &&
+            C+m == k+C) {
+              if(C.bigLength > k.bigLength) {
+                val (r, s, t) = LemmaCommutation3(C, m, k)
+                if(k == r + s &&
+                m == s + r &&
+                C == r + s + t && C == t + (s + r) &&
+                A == D + k &&
+                LemmaRightEquality(D, k, r+s) &&
+                D + k == D + (r+s) &&
+                A == D + (r+s) &&
+                E == m + B &&
+                LemmaLeftEquality(m, s+r, B) &&
+                m + B == (s+r) + B &&
+                E == (s+r) + B) {
+                  if(reduceForm2(D, E, C, A, B, s, r, t, m, k)) {
+                    if(theoremCase1(n, D, E, C, A, B, F, r, s)) {
+                      if(f(n) == g(n))
+                        true
+                       else error[Boolean]("this should not happen")
+                    } else error[Boolean]("this should not happen")
+                  } else error[Boolean]("this should not happen")
+                } else error[Boolean]("this should not happen")
+              } else {
+                val (r, s) = LemmaCommutation1(C, m, k)
+                if(
+                  k == r + s &&
+                  m == s + r &&
+                  C == r && 
+                  equalitySimpleC(C, s, r) &&
+                  (r+s)+r == (r+s) + C &&
+                  LemmaRightEquality(D, k, r+s) &&
+                  D + k == D + (r + s))
+                  if(reduceFormCIsr(D, E, C, A, B, s, r, m, k))
+                    if(theoremCase1(n, D, E, F, A, B, C, r, s) &&
+                      f(n) == g(n)
+                    )
+                      true
+                    else error[Boolean]("this should not happen")
+                  else error[Boolean]("this should not happen")
+                else error[Boolean]("this should not happen")
+              }
+            } else error[Boolean]("this should not happen")
+          } else error[Boolean]("this should not happen")
         }
-      })
-    )
-        
-        /* &&
-        (A+C).bigLength > (D+C).bigLength &&
-        (A+C)+(k+E) == (D+C)+E &&
-        LemmaAssociativity(A=C,k,E) &&
-        ((A+C)+k)+E == (D+C)+E &&
-        LemmaRightSimplification((A+C)+k, D+C, E) &&
-        (A+C)+k == D+C &&*/
-        
-        /* &&
-        A.bigLength < D.bigLength*/
-      /*val np = minus1(n) // n == Succ(np)
-      dummyTheorem(np, A, B, C, D, E, F) &&
-      f(np) == g(np) &&
-      f(n) == A+f(np)+B &&
-      g(n) == D+g(np)+E &&
-      A+f(np)+B == D+g(np)+E &&
-      n == Succ(np)*/
-  }.holds
-    /* &&
-    g(Succ(Succ(Zero))) == D+g(Succ(Zero))+E *//* &&
-    A+A+C+B+B == D+D+F+E+E*/
-    /**
-    A+A+C+B+B == D+D+F+E+E*/
-    //fc(n, A, B, C) == fc(n, D, E, F) because {
-    //  true
-      
+      }
+      }
+    } else error[Boolean]("this should not happen"))
+      && f(n) == g(n))
+      true
+    else  error[Boolean]("this should not happen")
+    
+  } ensuring { (res: Boolean) =>
+    val f = (n: Nat) => fc(n, A, B, C)
+    val g = (n: Nat) => fc(n, D, E, F)
+    res && f(n) == g(n)
+  }
+  
       /*f(Zero) == g(Zero) <=> C = F
       1. f(Succ(Zero)) == g(Succ(Zero)) <=> ACB = DCE
       2. f(Succ(Succ(Zero))) == g(Succ(Succ(Zero))) <=> AACBB = DDCEE
