@@ -579,85 +579,6 @@ A = k1
     A + power(B + A, n) == power(A + B, n) + A
   } holds
   
-  def canonicalForm(A: String, r: String, s: String, t: String, E: String) = {
-    require( ((A+((r+s)+t))+((s+r)+E))+(s+r) == (r+s)+(((A+(r+s))+(t+(s+r)))+E) && t+(s+r) == (r+s)+t)
-    ((A+(r+s))+(t+(s+r)))+(E+(s+r)) == (((r+s)+A)+((r+s)+t))+((s+r)+E) &&
-    (E+(s+r)).bigLength == ((s+r)+E).bigLength &&
-    LemmaRightSizeSimplification((A+(r+s))+(t+(s+r)), E+(s+r), ((r+s)+A)+((r+s)+t), (s+r)+E) &&
-    E+(s+r) == (s+r)+E &&
-    (A+(r+s))+(t+(s+r)) == ((r+s)+A)+((r+s)+t) &&
-    LemmaLeftSizeSimplification(A+(r+s), t+(s+r), (r+s)+A, (r+s)+t)  &&
-    A+(r+s) == (r+s)+A
-  } holds
-  
-  def LemmaExpansion(A: String, B: String, f1: String, f2: String, f3: String): Boolean = {
-    require(f2 == A+f1+B && f3 == A+f2+B)
-    f3 == A+(A+f1+B)+B
-  } holds
-  
-  def canonically(A: String, fnp: String, s: String, r: String, E: String) = {
-    require((r+s)+fnp == fnp+(s+r))
-     (A+((r+s)+fnp))+E == (A+(fnp+(s+r)))+E
-  } holds
-
-  def reduceForm(n: Nat, np: Nat, A: String, B: String, C: String, D: String, E: String, F: String, s: String, r: String, t: String) = {
-    require{
-      val f = (n: Nat) => fc(n, A, B, C)
-      val g = (n: Nat) => fc(n, D, E, F)
-      E+(s+r) == (s+r)+E &&
-      A+(r+s) == (r+s)+A &&
-      C == F &&
-      C == t + (s + r) &&
-      D == A + (r + s) &&
-      B == (s + r) + E &&
-      n == Succ(np) &&
-      f(np) == g(np) &&
-      f(np)+(s+r) == (r+s)+f(np)
-    }
-    val f = (n: Nat) => fc(n, A, B, C)
-    val g = (n: Nat) => fc(n, D, E, F)
-      (f(n) == A+f(np)+B &&
-      f(n) == (A+f(np)+(s + r))+E &&
-      f(n) == (A+(f(np)+(s+r)))+E &&
-      g(n) == D+g(np)+E &&
-      g(n) == D+f(np)+E &&
-      g(n) == (A+(r+s))+f(np)+E &&
-      g(n) == (A+((r+s)+f(np)))+E && canonically(A, f(np), s, r, E) &&
-      g(n) == (A+(f(np)+(s+r)))+E) &&
-    f(n) == g(n) &&
-      (B+(s+r) == ((s+r)+E)+(s+r) &&
-      LemmaAssociativity(s+r,E,s+r) &&
-      ((s+r)+E)+(s+r) == (s+r)+(E+(s+r)) && E+(s+r) == (s+r)+E &&
-      LemmaRightEquality(s+r,E+(s+r),(s+r)+E) &&
-      (s+r)+(E+(s+r)) == (s+r)+((s+r)+E) &&
-      (s+r)+((s+r)+E) == (s+r)+B) &&
-    B+(s+r) == (s+r)+B &&
-      (LemmaLeftEquality(f(n),A+f(np)+B, s+r) &&
-       f(n) + (s+r) == ((A+f(np))+B) + (s+r) &&
-      LemmaAssociativity(A+f(np), B, s+r) &&
-      (A+f(np)+B) + (s+r) ==  A+f(np)+(B + (s+r)) && B+(s+r) == (s+r)+B &&
-      LemmaRightEquality(A+f(np), B+(s+r), (s+r)+B) &&
-      A+f(np)+(B + (s+r)) ==  A+f(np)+((s+r)+B) &&
-      LemmaAssociativity(A+f(np), s+r, B) &&
-      A+f(np)+((s+r)+B) == (A+f(np)+(s+r))+B &&
-      LemmaAssociativity(A, f(np), s+r) &&
-      (A+f(np)+(s+r))+B  ==  (A+(f(np)+(s+r)))+B && f(np)+(s+r) == (r+s)+f(np) &&
-      LemmaRightEquality(A, f(np)+(s+r), (r+s)+f(np)) &&
-      A+(f(np)+(s+r)) == A+((r+s)+f(np)) &&
-      LemmaLeftEquality(A+(f(np)+(s+r)), A+((r+s) + f(np)), B) &&
-      (A+(f(np)+(s+r)))+B == (A+((r+s) + f(np)))+B &&
-      LemmaAssociativity(A, r+s, f(np)) &&
-      (A+((r+s)+f(np)))+B == ((A+(r+s))+f(np))+B &&
-      ((A+(r+s))+f(np))+B == (((r+s)+A)+f(np))+B &&
-      LemmaAssociativity(r+s, A, f(np)) &&
-      (((r+s)+A)+f(np))+B == ((r+s)+(A+f(np)))+B &&
-      LemmaAssociativity(r+s, A+f(np),B) &&
-      ((r+s)+(A+f(np)))+B == (r+s)+(A+f(np)+B) && f(n) == A+f(np)+B &&
-      LemmaRightEquality(r+s, f(n), A+f(np)+B) &&
-      (r+s)+(A+f(np)+B) == (r+s)+f(n)) &&
-    f(n) +(s+r) == (r+s) + f(n)
-  } holds
-  
   def lemmaCommuteSize(A: String, B: String): Boolean = {
     (A+B).bigLength == (B+A).bigLength
   } holds
@@ -730,7 +651,7 @@ A = k1
       D == A + k &&
       B == m + E
     )
-    if(
+    check(
       (A+(A+C+(m + E)))+(m + E) == (D+(D+C+E))+E &&
     LemmaAssociativity(A+(A+C+(m + E)), m, E) &&
     ((A+(A+C+(m + E)))+m) + E == (D+(D+C+E))+E &&
@@ -744,21 +665,21 @@ A = k1
     A+r+(m+E)+m == k+(A+k+C+E) && C == r &&
     A+r+(m+E)+m == k+(A+k+r+E) && m == s+r &&
     A+r+((s+r)+E)+(s+r) == k+(A+k+r+E) && k == r+s &&
-    A+r+((s+r)+E)+(s+r) == (r+s)+(A+k+r+E) && 
-      ((A+r) + ((s+r)+E))+(s+r)               ==  (r+s)+(((A+(r+s))+r)+E) &&
-      LemmaAssociativity5_2_3__1_2_2(A, r, s, r, E) &&
+    A+r+((s+r)+E)+(s+r) == (r+s)+(A+k+r+E)) && 
+    check(  ((A+r) + ((s+r)+E))+(s+r)               ==  (r+s)+(((A+(r+s))+r)+E)) &&
+    check( LemmaAssociativity5_2_3__1_2_2(A, r, s, r, E) &&
       (A+r) + ((s+r)+E) == (A+(r+s))+(r+E) &&
       LemmaLeftEquality((A+r) + ((s+r)+E), (A+(r+s))+(r+E), s+r) &&
       (A+r) + ((s+r)+E) + (s+r) == ((A+(r+s))+(r+E)) + (s+r) &&
       LemmaAssociativity((A+(r+s)), (r+E), (s+r)) &&
-      ((A+(r+s))+(r+E)) + (s+r) == (A+(r+s))+((r+E) + (s+r)) &&
-                                              LemmaAssociativity4_1_3(A, r+s, r, E) &&
+      ((A+(r+s))+(r+E)) + (s+r) == (A+(r+s))+((r+E) + (s+r))) &&
+                                             check( LemmaAssociativity4_1_3(A, r+s, r, E) &&
                                                 A + ((r+s) + r + E) == ((A + (r+s)) + r) + E &&
                                                 ((A+(r+s))+r)+E == A+(((r+s)+r+E)) &&
                                               LemmaRightEquality(r+s, A+(r+s)+r+E, A+((r+s)+r+E)) &&
                                               (r+s)+(A+(r+s)+r+E) == (r+s)+(A+((r+s)+r+E)) &&
                                               LemmaAssociativity(r+s, A, ((r+s)+r+E)) &&
-                                              (r+s)+(A+((r+s)+r+E)) == ((r+s)+A)+((r+s)+r+E) &&
+                                              (r+s)+(A+((r+s)+r+E)) == ((r+s)+A)+((r+s)+r+E)) &&
       (A+(r+s))+((r+E) + (s+r)) == ((A+(r+s))+(r+E)) + (s+r) &&
       ((A+(r+s))+(r+E)) + (s+r) == (r+s)+(((A+(r+s))+r)+E) &&
       (r+s)+(((A+(r+s))+r)+E) == ((r+s)+A)+((r+s)+r+E) &&
@@ -766,16 +687,15 @@ A = k1
     lemmaCommuteSize(r+s, A) &&
     ((r+s)+A).bigLength == (A+(r+s)).bigLength &&
     LemmaLeftSizeSimplification(A + (r+s), ((r+E) + (s+r)), (r+s)+A, ((r+s)+r+E)) &&
-    A + (r+s) == (r+s) + A && ((r+E) + (s+r)) == ((r+s)+r+E) &&
+    check(A + (r+s) == (r+s) + A) &&
+    ((r+E) + (s+r)) == ((r+s)+r+E) &&
     LemmaAssociativity(r, E, s+r) &&
     ((r+E) + (s+r)) == r+(E+(s+r)) &&
     LemmaAssociativity4_1_3(r, E, s, r) &&
     ((r+s)+r)+E == r+((s+r)+E) &&
     r+(E+(s+r)) == r+((s+r)+E) &&
     LemmaLeftSizeSimplification(r, E+(s+r) , r, (s+r)+E) &&
-    E + (s+r) == (s+r) + E )
-      true
-    else error[Boolean]("This should not happen")
+    check(E + (s+r) == (s+r) + E)
   } ensuring { (res: Boolean) =>
     res && A + (r+s) == (r+s) + A && E + (s+r) == (s+r) + E
   }
@@ -792,30 +712,6 @@ if A B = C A, then there exists k1 and k2 such that C = k1 k2 and B = k2 k1  and
 if A B = B A, then (A B)^n = A^n B^n
 6) Power Equivalence
  (A B)^n A = A (B A)^n*/
- 
-  def minus1(n: Nat) = {
-    require(n.isInstanceOf[Succ])
-    n match { case Succ(np) => np }
-  } ensuring {
-    res => n == Succ(res)
-  }
-  
-  @library
-  def dummyTheorem(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String): (String, String) = {
-    require{
-      val f = (n: Nat) => fc(n, A, B, C)
-      val g = (n: Nat) => fc(n, D, E, F)
-      f(Zero) == g(Zero) &&
-      f(Succ(Zero)) == g(Succ(Zero))  &&
-      f(Succ(Succ(Zero))) == g(Succ(Succ(Zero)))}
-    val f = (n: Nat) => fc(n, A, B, C)
-    val g = (n: Nat) => fc(n, D, E, F)
-    dummyTheorem(n, A, B, C, D, E, F)
-  } ensuring { (res) =>
-    val f = (n: Nat) => fc(n, A, B, C)
-    val g = (n: Nat) => fc(n, D, E, F)
-    f(n) == g(n)
-  }
   
   def lemmaPropagateCommutativity(B: String, k: String, E: String): Boolean = {
     require(B == k + E && E + k == k + E)
@@ -933,73 +829,6 @@ if A B = B A, then (A B)^n = A^n B^n
   } ensuring {
     (res: Boolean) => C + (s+r) == (r+s) + C
   }
-  
-/*  def otherCase(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
-    require{
-      val f = (n: Nat) => fc(n, A, B, C)
-      val g = (n: Nat) => fc(n, D, E, F)
-      f(Zero) == g(Zero) &&
-      f(Succ(Zero)) == g(Succ(Zero))  &&
-      f(Succ(Succ(Zero))) == g(Succ(Succ(Zero))) &&
-      E.bigLength >= B.bigLength
-    }
-    val f = (n: Nat) => fc(n, A, B, C)
-    val g = (n: Nat) => fc(n, D, E, F)
-    
-    val m = Lemma006SuffixIntroduce(A+C, B, D+C, E)
-    if(E == m + B && A+C == (D+C) + m &&    // ACB = DCE <=> ACm = DC
-    LemmaRightGreaterSmaller(A+C, B, D+C, E) &&
-    (A+C).bigLength > (D+C).bigLength &&
-    LemmaLength(A, C) && LemmaLength(D, C) &&
-    A.bigLength + C.bigLength > D.bigLength + C.bigLength &&
-    A.bigLength > D.bigLength &&
-    LemmaAssociativity(D, C, m) &&
-    A+C == D+(C+m)) {
-      val k = Lemma005PrefixIntroduce(D, C+m, A, C)
-      if(A == D+k &&                    // ACm = DC <=> Cm = kC
-      (D+k)+C == (D+C)+m &&
-      LemmaAssociativity(D, k, C) && LemmaAssociativity(D, C, m) &&
-      D+(k+C) == D+(C+m) &&
-      LemmaLeftSimplification(D, k+C, C+m) &&
-      C+m == k+C) {
-        if(C.bigLength > k.bigLength) {
-          val (r, s, t) = LemmaCommutation3(C, m, k)
-          k == r + s &&
-          m == s + r &&
-          C == r + s + t && C == t + (s + r) &&
-          A == D + k &&
-          LemmaRightEquality(D, k, r+s) &&
-          D + k == D + (r+s) &&
-          A == D + (r+s) &&
-          E == m + B
-          LemmaLeftEquality(m, s+r, B) &&
-          m + B == (s+r) + B &&
-          E == (s+r) + B &&
-          reduceForm2(D, E, C, A, B, s, r, t, m, k) &&
-          theoremCase1(n, D, E, C, A, B, F, r, s) &&
-          f(n) == g(n)
-        } else {
-          val (r, s) = LemmaCommutation1(C, m, k)
-          if(
-            k == r + s &&
-            m == s + r &&
-            C == r && 
-            equalitySimpleC(C, s, r) &&
-            (r+s)+r == (r+s) + C &&
-            LemmaRightEquality(D, k, r+s) &&
-            D + k == D + (r + s))
-            if(reduceFormCIsr(D, E, C, A, B, s, r, m, k))
-              if(theoremCase1(n, D, E, C, A, B, F, r, s))
-                f(n) == g(n)
-              else error[Boolean]("this should not happen")
-            else error[Boolean]("this should not happen")
-          else error[Boolean]("this should not happen")
-        }
-      } else error[Boolean]("this should not happen")
-    } else error[Boolean]("this should not happen")
-  }
-
-*/
   
   def EqualityBetweenListPrinters(n: Nat, A: String, B: String, C: String, D: String, E: String, F: String) = {
     require{
